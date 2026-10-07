@@ -1,0 +1,611 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>初級日語下冊第一課 - 生詞學習 App</title>
+  <style>
+    :root {
+      --primary-color: #4a90e2;
+      --secondary-color: #f5a623;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --light-text: #777777;
+      --danger-color: #e74c3c;
+      --success-color: #2ecc71;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 500px;
+      margin: 0 auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    /* 頂部導覽與語速控制 */
+    header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .speech-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+    }
+
+    .speech-control input {
+      width: 75px;
+    }
+
+    /* 主要內容區域 */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      position: relative;
+    }
+
+    .view-section {
+      display: none;
+      height: 100%;
+      flex-direction: column;
+    }
+
+    .view-section.active {
+      display: flex;
+    }
+
+    /* 底部選單 */
+    nav {
+      display: flex;
+      background-color: var(--card-bg);
+      border-top: 1px solid #ddd;
+      padding: 8px 0;
+    }
+
+    .nav-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--light-text);
+      cursor: pointer;
+    }
+
+    .nav-btn.active {
+      color: var(--primary-color);
+      font-weight: bold;
+    }
+
+    .nav-btn span {
+      font-size: 1.2rem;
+      margin-bottom: 2px;
+    }
+
+    /* 按鈕樣式 */
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: opacity 0.2s;
+    }
+
+    .btn:active {
+      opacity: 0.8;
+    }
+
+    .btn-secondary { background-color: var(--secondary-color); }
+    .btn-danger { background-color: var(--danger-color); }
+
+    /* 單字卡風格 */
+    .card-container {
+      perspective: 1000px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .flashcard {
+      width: 100%;
+      height: 270px;
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+      cursor: pointer;
+      border: 1px solid #eee;
+    }
+
+    .flashcard .kanji { font-size: 2.2rem; font-weight: bold; margin-bottom: 8px; color: #222; }
+    .flashcard .kana { font-size: 1.2rem; color: var(--primary-color); margin-bottom: 8px; }
+    .flashcard .romaji { font-size: 0.9rem; color: var(--light-text); margin-bottom: 12px; }
+    .flashcard .meaning { font-size: 1.3rem; font-weight: 500; color: #2c3e50; background: #f0f7ff; padding: 6px 16px; border-radius: 20px; }
+
+    .card-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-actions .btn { flex: 1; }
+
+    /* 列表通用 */
+    .word-list {
+      list-style: none;
+      overflow-y: auto;
+    }
+
+    .word-item {
+      background: var(--card-bg);
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+    }
+
+    .word-info { display: flex; flex-direction: column; gap: 2px; }
+    .word-info .main-text { font-size: 1.1rem; font-weight: bold; }
+    .word-info .sub-text { font-size: 0.85rem; color: var(--light-text); }
+
+    .audio-icon {
+      background: #eef5ff;
+      color: var(--primary-color);
+      border-radius: 50%;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+
+    /* 測驗模式 */
+    .quiz-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .option-btn {
+      background: var(--card-bg);
+      border: 1px solid #ddd;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 1rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .option-btn.correct { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+    .option-btn.wrong { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+
+    /* 歷史紀錄 */
+    .history-card {
+      background: var(--card-bg);
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+
+    .badge {
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: white;
+    }
+    .badge-success { background: var(--success-color); }
+    .badge-danger { background: var(--danger-color); }
+  </style>
+</head>
+<body>
+
+  <!-- 頂部導覽列 -->
+  <header>
+    <h1>初級日語下冊 第一課</h1>
+    <div class="speech-control">
+      <label for="rate">語速:</label>
+      <input type="range" id="rate" min="0.5" max="1.5" step="0.1" value="1.0">
+      <span id="rate-val">1.0x</span>
+    </div>
+  </header>
+
+  <!-- 主要內容區 -->
+  <main>
+    <!-- 1. 單字卡 -->
+    <section id="flashcard-view" class="view-section active">
+      <div style="text-align: center; color: var(--light-text); font-size: 0.85rem; margin-bottom: 8px;">
+        點擊卡片顯示中文 | 進度：<span id="card-progress">1/32</span>
+      </div>
+      <div class="card-container">
+        <div class="flashcard" id="flashcard" onclick="toggleCardMeaning()">
+          <div class="kanji" id="card-kanji">---</div>
+          <div class="kana" id="card-kana">---</div>
+          <div class="romaji" id="card-romaji">---</div>
+          <div class="meaning" id="card-meaning" style="display: none;">---</div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-secondary" onclick="playCurrentCardAudio()"> 發音</button>
+        <button class="btn" onclick="nextCard()">下一張 ➔</button>
+      </div>
+    </section>
+
+    <!-- 2. 全課生字表 -->
+    <section id="list-view" class="view-section">
+      <h2 style="font-size: 1.1rem; margin-bottom: 12px;">全課生字表 (<span id="total-words-count">0</span>)</h2>
+      <ul class="word-list" id="full-word-list"></ul>
+    </section>
+
+    <!-- 3. 聽力測驗 -->
+    <section id="quiz-view" class="view-section">
+      <div class="quiz-card">
+        <p style="font-size: 0.9rem; color: var(--light-text); margin-bottom: 10px;">請聽日文發音，選擇正確的中文意思：</p>
+        <button class="btn btn-secondary" onclick="playQuizAudio()" style="font-size: 1.1rem; padding: 12px 24px;"> 再聽一次</button>
+      </div>
+      <div class="options-grid" id="quiz-options"></div>
+    </section>
+
+    <!-- 4. 錯題本 -->
+    <section id="mistakes-view" class="view-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="font-size: 1.1rem;">錯題紀錄 (<span id="mistake-count">0</span>)</h2>
+        <button class="btn btn-danger" style="padding: 4px 10px; font-size: 0.8rem;" onclick="clearMistakes()">清空錯題</button>
+      </div>
+      <ul class="word-list" id="mistake-word-list"></ul>
+    </section>
+
+    <!-- 5. 歷史紀錄 -->
+    <section id="history-view" class="view-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h2 style="font-size: 1.1rem;">測驗歷史紀錄</h2>
+        <button class="btn btn-danger" style="padding: 4px 10px; font-size: 0.8rem;" onclick="clearHistory()">清空歷史</button>
+      </div>
+      <div id="history-list"></div>
+    </section>
+  </main>
+
+  <!-- 底部選單 -->
+  <nav>
+    <button class="nav-btn active" onclick="switchView('flashcard-view', this)">
+      <span></span>單字卡
+    </button>
+    <button class="nav-btn" onclick="switchView('list-view', this)">
+      <span></span>全課單字
+    </button>
+    <button class="nav-btn" onclick="switchView('quiz-view', this); startQuiz();">
+      <span></span>聽力測驗
+    </button>
+    <button class="nav-btn" onclick="switchView('mistakes-view', this)">
+      <span>❌</span>錯題本
+    </button>
+    <button class="nav-btn" onclick="switchView('history-view', this)">
+      <span></span>歷史紀錄
+    </button>
+  </nav>
+
+  <script>
+    // 匯入《初級日語下冊第一課生詞》對應資料
+    const wordsData = [
+      { id: 1, kanji: '', kana: 'チョコレート', romaji: 'chokorēto', meaning: '巧克力' },
+      { id: 2, kanji: '秘密', kana: 'ひみつ', romaji: 'himitsu', meaning: '秘密' },
+      { id: 3, kanji: '気持ち', kana: 'きもち', romaji: 'kimochi', meaning: '感覺；心情' },
+      { id: 4, kanji: '母の日', kana: 'ははのひ', romaji: 'haha no hi', meaning: '母親節' },
+      { id: 5, kanji: '七夕', kana: 'たなばた', romaji: 'tanabata', meaning: '七夕' },
+      { id: 6, kanji: '', kana: 'プレゼント', romaji: 'purezento', meaning: '禮物' },
+      { id: 7, kanji: '', kana: 'クリスマス', romaji: 'kurisumasu', meaning: '聖誕節' },
+      { id: 8, kanji: '', kana: 'サンタクロース', romaji: 'santa kurōsu', meaning: '聖誕老公公' },
+      { id: 9, kanji: '靴下', kana: 'くつした', romaji: 'kutsushita', meaning: '襪子' },
+      { id: 10, kanji: 'メモ帳', kana: 'めもちょう', romaji: 'memo chō', meaning: '記事本' },
+      { id: 11, kanji: '人形', kana: 'にんぎょう', romaji: 'ningyō', meaning: '娃娃；玩偶' },
+      { id: 12, kanji: '絵葉書', kana: 'えはがき', romaji: 'ehagaki', meaning: '風景或圖畫明信片' },
+      { id: 13, kanji: '着物', kana: 'きもの', romaji: 'kimono', meaning: '衣服；和服' },
+      { id: 14, kanji: '', kana: 'カード', romaji: 'kādo', meaning: '卡片' },
+      { id: 15, kanji: 'お金', kana: 'おかね', romaji: 'okane', meaning: '金錢' },
+      { id: 16, kanji: '日本茶', kana: 'にほんちゃ', romaji: 'nihoncha', meaning: '日本茶' },
+      { id: 17, kanji: '父', kana: 'ちち', romaji: 'chichi', meaning: '父親' },
+      { id: 18, kanji: '母', kana: 'はは', romaji: 'haha', meaning: '母親' },
+      { id: 19, kanji: '菓子', kana: 'かし', romaji: 'kashi', meaning: '點心；糕點' },
+      { id: 20, kanji: '切手', kana: 'きってみ', romaji: 'kitte', meaning: '郵票' },
+      { id: 21, kanji: '水泳', kana: 'すいえい', romaji: 'suiei', meaning: '游泳' },
+      { id: 22, kanji: '兄', kana: 'あに', romaji: 'ani', meaning: '哥哥' },
+      { id: 23, kanji: '', kana: 'あげます', romaji: 'agemasu', meaning: '給' },
+      { id: 24, kanji: '', kana: 'もらいます', romaji: 'moraimasu', meaning: '獲得；收到' },
+      { id: 25, kanji: '教えます', kana: 'おしえます', romaji: 'oshiemasu', meaning: '教；教導' },
+      { id: 26, kanji: '習います', kana: 'ならいます', romaji: 'naraimasu', meaning: '學習' },
+      { id: 27, kanji: '借ります', kana: 'かりま', romaji: 'karimasu', meaning: '借（入）' },
+      { id: 28, kanji: '貸します', kana: 'かします', romaji: 'kashimasu', meaning: '借（出）；貸' },
+      { id: 29, kanji: '', kana: 'そうですか', romaji: 'sō desu ka', meaning: '是嗎' },
+      { id: 30, kanji: '困ったな', kana: 'こまったな', romaji: 'komatta na', meaning: '真糟糕' },
+      { id: 31, kanji: '', kana: '～よ', romaji: 'yo', meaning: '啦；啊；呀（用於句尾）' },
+      { id: 32, kanji: '', kana: 'ええ', romaji: 'ee', meaning: '嗯；欸（表示回應）' }
+    ];
+
+    // 全域變數
+    let currentCardIndex = 0;
+    let currentQuizWord = null;
+    let speechRate = 1.0;
+    let mistakes = JSON.parse(localStorage.getItem('jp_mistakes') || '[]');
+    let historyLogs = JSON.parse(localStorage.getItem('jp_history') || '[]');
+
+    // 初始化頁面
+    window.onload = () => {
+      initSpeechControl();
+      renderCurrentCard();
+      renderFullWordList();
+      renderMistakes();
+      renderHistory();
+    };
+
+    // 1. 語音發音機制 (Web Speech API)
+    function speakJapanese(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ja-JP';
+        utterance.rate = speechRate;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        alert('您的裝置不支援語音發音功能');
+      }
+    }
+
+    function initSpeechControl() {
+      const rateInput = document.getElementById('rate');
+      const rateVal = document.getElementById('rate-val');
+      rateInput.addEventListener('input', (e) => {
+        speechRate = parseFloat(e.target.value);
+        rateVal.textContent = speechRate.toFixed(1) + 'x';
+      });
+    }
+
+    // 2. 切換分頁
+    function switchView(viewId, btn) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      btn.classList.add('active');
+    }
+
+    // 3. 單字卡功能
+    function renderCurrentCard() {
+      const word = wordsData[currentCardIndex];
+      const kanjiEl = document.getElementById('card-kanji');
+      const kanaEl = document.getElementById('card-kana');
+
+      if (word.kanji && word.kanji.trim() !== '') {
+        kanjiEl.textContent = word.kanji;
+        kanaEl.textContent = word.kana;
+        kanaEl.style.display = 'block';
+      } else {
+        kanjiEl.textContent = word.kana;
+        kanaEl.style.display = 'none';
+      }
+
+      document.getElementById('card-romaji').textContent = word.romaji;
+      document.getElementById('card-meaning').textContent = word.meaning;
+      document.getElementById('card-meaning').style.display = 'none';
+      document.getElementById('card-progress').textContent = `${currentCardIndex + 1}/${wordsData.length}`;
+
+      playCurrentCardAudio();
+    }
+
+    function toggleCardMeaning() {
+      const meaningEl = document.getElementById('card-meaning');
+      meaningEl.style.display = meaningEl.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function playCurrentCardAudio() {
+      speakJapanese(wordsData[currentCardIndex].kana);
+    }
+
+    function nextCard() {
+      currentCardIndex = (currentCardIndex + 1) % wordsData.length;
+      renderCurrentCard();
+    }
+
+    // 4. 全課生字表
+    function renderFullWordList() {
+      const listEl = document.getElementById('full-word-list');
+      document.getElementById('total-words-count').textContent = wordsData.length;
+      listEl.innerHTML = wordsData.map(word => {
+        const title = word.kanji ? `${word.kanji} (${word.kana})` : word.kana;
+        return `
+          <li class="word-item">
+            <div class="word-info">
+              <span class="main-text">${title}</span>
+              <span class="sub-text">${word.romaji} - ${word.meaning}</span>
+            </div>
+            <div class="audio-icon" onclick="speakJapanese('${word.kana}')"></div>
+          </li>
+        `;
+      }).join('');
+    }
+
+    // 5. 聽力測驗
+    function startQuiz() {
+      const randomIndex = Math.floor(Math.random() * wordsData.length);
+      currentQuizWord = wordsData[randomIndex];
+
+      let options = [currentQuizWord];
+      while (options.length < 4 && options.length < wordsData.length) {
+        const rand = wordsData[Math.floor(Math.random() * wordsData.length)];
+        if (!options.some(o => o.id === rand.id)) {
+          options.push(rand);
+        }
+      }
+      options.sort(() => Math.random() - 0.5);
+
+      const optionsEl = document.getElementById('quiz-options');
+      optionsEl.innerHTML = options.map(opt => `
+        <button class="option-btn" onclick="checkAnswer(${opt.id}, this)">${opt.meaning}</button>
+      `).join('');
+
+      playQuizAudio();
+    }
+
+    function playQuizAudio() {
+      if (currentQuizWord) {
+        speakJapanese(currentQuizWord.kana);
+      }
+    }
+
+    function checkAnswer(selectedId, btnEl) {
+      const allBtns = document.querySelectorAll('.option-btn');
+      allBtns.forEach(b => b.style.pointerEvents = 'none');
+
+      const isCorrect = (selectedId === currentQuizWord.id);
+
+      if (isCorrect) {
+        btnEl.classList.add('correct');
+      } else {
+        btnEl.classList.add('wrong');
+        if (!mistakes.some(m => m.id === currentQuizWord.id)) {
+          mistakes.push(currentQuizWord);
+          saveMistakes();
+        }
+      }
+
+      saveHistory(currentQuizWord, isCorrect);
+
+      setTimeout(() => {
+        startQuiz();
+      }, 1400);
+    }
+
+    // 6. 錯題本管理
+    function saveMistakes() {
+      localStorage.setItem('jp_mistakes', JSON.stringify(mistakes));
+      renderMistakes();
+    }
+
+    function renderMistakes() {
+      const listEl = document.getElementById('mistake-word-list');
+      document.getElementById('mistake-count').textContent = mistakes.length;
+
+      if (mistakes.length === 0) {
+        listEl.innerHTML = '<li style="text-align:center; color:var(--light-text); padding:20px;">太棒了！目前沒有錯題紀錄。</li>';
+        return;
+      }
+
+      listEl.innerHTML = mistakes.map(word => {
+        const title = word.kanji ? `${word.kanji} (${word.kana})` : word.kana;
+        return `
+          <li class="word-item">
+            <div class="word-info">
+              <span class="main-text">${title}</span>
+              <span class="sub-text">${word.meaning}</span>
+            </div>
+            <div class="audio-icon" onclick="speakJapanese('${word.kana}')"></div>
+          </li>
+        `;
+      }).join('');
+    }
+
+    function clearMistakes() {
+      if (confirm('確定要清空錯題本嗎？')) {
+        mistakes = [];
+        saveMistakes();
+      }
+    }
+
+    // 7. 歷史紀錄管理
+    function saveHistory(word, isCorrect) {
+      const title = word.kanji ? `${word.kanji} (${word.kana})` : word.kana;
+      const record = {
+        word: title,
+        isCorrect: isCorrect,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      historyLogs.unshift(record);
+      if (historyLogs.length > 30) historyLogs.pop();
+      localStorage.setItem('jp_history', JSON.stringify(historyLogs));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const historyEl = document.getElementById('history-list');
+      if (historyLogs.length === 0) {
+        historyEl.innerHTML = '<div style="text-align:center; color:var(--light-text); padding:20px;">尚無測驗紀錄</div>';
+        return;
+      }
+
+      historyEl.innerHTML = historyLogs.map(log => `
+        <div class="history-card">
+          <span>${log.time} - <strong>${log.word}</strong></span>
+          <span class="badge ${log.isCorrect ? 'badge-success' : 'badge-danger'}">
+            ${log.isCorrect ? '正確' : '錯誤'}
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function clearHistory() {
+      if (confirm('確定要清空歷史紀錄嗎？')) {
+        historyLogs = [];
+        localStorage.setItem('jp_history', JSON.stringify(historyLogs));
+        renderHistory();
+      }
+    }
+  </script>
+</body>
+</html>
